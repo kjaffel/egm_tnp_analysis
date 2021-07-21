@@ -226,64 +226,74 @@ puMC = {
     0.0, 0.0, 0.0, 0.0],
 }
 
-### MC pu scenario to be used
-#puMCscenario = 'Spring2016MC_PUscenarioV1'
-#puMCscenario = 'mix_2017_25ns_UltraLegacy_PoissonOOTPU'
-#puMCscenario = 'mix_2018_25ns_UltraLegacy_PoissonOOTPU'
-puMCscenario = 'mix_2016_25ns_UltraLegacy_PoissonOOTPU'
-customWeightsName= 'weights'
-###puDirEOS = '/eos/cms/store/group/phys_egamma/swmukher/ntuple_2017/PU/'
-#puDirEOS = '/eos/cms/store/group/phys_egamma/soffi/TnP/ntuples_01162018/PU/'
-#puDirEOS = '/eos/cms/store/group/phys_egamma/asroy/Tag-and-Probe_Tree/UL2018_PUData/'
-puDirEOS = '/eos/cms/store/group/phys_egamma/asroy/Tag-and-Probe_Tree/UL2016_PUData/'
 
-
-#### Compute weights for all data epoch specified below
-puDataEpoch = {
-    '2016_runBCD' : puDirEOS + 'pu_dist_runBCD_692.root',
-    '2016_runEF' : puDirEOS + 'pu_dist_runEF_692.root',
-    '2016_runGH' : puDirEOS + 'pu_dist_runGH_692.root',
-    '2016_run2016' : puDirEOS + 'pu_dist_run2016_692.root',
-    }
-'''
-puDataEpoch = {
-    '2018_runA' : puDirEOS + 'pileup_2018_RunA.root',
-    '2018_runB' : puDirEOS + 'pileup_2018_RunB.root',
-    '2018_runC' : puDirEOS + 'pileup_2018_RunC.root',
-    '2018_runD'  : puDirEOS +'pileup_2018_RunD.root' ,
-    '2018_runABCD' : puDirEOS + 'pileup_2018_RunABCD.root',
-    }
-puDataEpoch = {
-    '2017_runB' : puDirEOS + 'pileup_2017_RUNB.root',
-    '2017_runC' : puDirEOS + 'pileup_2017_RUNC.root',
-    '2017_runD'  : puDirEOS +'pileup_2017_RUND.root' ,
-    '2017_runE'  : puDirEOS +'pileup_2017_RUNE.root' ,
-    '2017_runF' : puDirEOS + 'pileup_2017_RUNF.root',    
-    '2017_runBCDEF' : puDirEOS + 'pileup_2017_41fb.root',
-    }
-'''
-nVtxDataEpoch = {
-    '2016_runBCD' : 'etc/inputs/nVtx_2016_runBCD.root',
-    '2016_runEF'  : 'etc/inputs/nVtx_2016_runEF.root' ,
-    '2016_runGH'  : 'etc/inputs/nVtx_2016_runGH.root' ,
-}
-
-rhoDataEpoch = {
-    '2016_runE'   : 'etc/inputs/rho_pu_runE.root',
-    '2016_runGH'  : 'etc/inputs/rho_pu_runGH.root',
-}
-
-
-
-
-
-def reweight( sample, puType = 0,useCustomW=False  ):
+def reweight( sample, puType = 0, era = None, useCustomW=False):
     if sample.path is None:
         print '[puReweighter]: Need to know the MC tree (option --mcTree or sample.path)'
         sys.exit(1)
+    if era is None:
+        print 'era not found !'
     
+    customWeightsName= 'weights'
+    ################################################
 
-### create a tree with only weights that will be used as friend tree for reweighting different lumi periods
+    # MC pu scenario to be used
+        #puMCscenario = 'Spring2016MC_PUscenarioV1'
+        #puDirEOS = '/eos/cms/store/group/phys_egamma/swmukher/ntuple_2017/PU/'
+        #puDirEOS = '/eos/cms/store/group/phys_egamma/soffi/TnP/ntuples_01162018/PU/'
+    ################################################
+    if 'UL2016' in era: 
+        era = 'UL2016' # ignore pre/post VFP
+        puMCscenario = 'mix_2016_25ns_UltraLegacy_PoissonOOTPU'
+        #puDirEOS = '/eos/cms/store/group/phys_egamma/asroy/Tag-and-Probe_Tree/UL2016_PUData/'
+        puDirEOS = '/home/ucl/cp3/kjaffel/tagandprobe/egm_tnp_fitting-step/etc/scripts/UL2016_PUData/'
+    elif era == 'UL2017':
+        puMCscenario = 'mix_2017_25ns_UltraLegacy_PoissonOOTPU'
+        puDirEOS = '' # FIXME
+    elif era == 'UL2018': 
+        puMCscenario = 'mix_2018_25ns_UltraLegacy_PoissonOOTPU'
+        puDirEOS = '/eos/cms/store/group/phys_egamma/asroy/Tag-and-Probe_Tree/UL2018_PUData/'
+
+    #### Compute weights for all data epoch specified below
+    puDataEpoch = {"UL2016":{ 
+                        '2016_runBCD' : puDirEOS + 'pu_dist_runBCD_692.root',
+                        '2016_runEF' : puDirEOS + 'pu_dist_runEF_692.root',
+                        '2016_runGH' : puDirEOS + 'pu_dist_runGH_692.root',
+                        '2016_run2016' : puDirEOS + 'pu_dist_run2016_692.root',
+                        },
+                    "UL2018":{
+                        '2018_runA' : puDirEOS + 'pileup_2018_RunA.root',
+                        '2018_runB' : puDirEOS + 'pileup_2018_RunB.root',
+                        '2018_runC' : puDirEOS + 'pileup_2018_RunC.root',
+                        '2018_runD'  : puDirEOS +'pileup_2018_RunD.root' ,
+                        '2018_runABCD' : puDirEOS + 'pileup_2018_RunABCD.root',
+                        },
+                    "UL2017":{
+                        '2017_runB' : puDirEOS + 'pileup_2017_RUNB.root',
+                        '2017_runC' : puDirEOS + 'pileup_2017_RUNC.root',
+                        '2017_runD'  : puDirEOS +'pileup_2017_RUND.root' ,
+                        '2017_runE'  : puDirEOS +'pileup_2017_RUNE.root' ,
+                        '2017_runF' : puDirEOS + 'pileup_2017_RUNF.root',    
+                        '2017_runBCDEF' : puDirEOS + 'pileup_2017_41fb.root',
+                        }
+                    }
+    
+    nVtxDataEpoch = {"UL2016":{
+                        '2016_runBCD' : 'etc/inputs/nVtx_2016_runBCD.root',
+                        '2016_runEF'  : 'etc/inputs/nVtx_2016_runEF.root' ,
+                        '2016_runGH'  : 'etc/inputs/nVtx_2016_runGH.root' ,
+                        },
+                    }
+
+    rhoDataEpoch = {"UL2016":{
+                        '2016_runE'   : 'etc/inputs/rho_pu_runE.root',
+                        '2016_runGH'  : 'etc/inputs/rho_pu_runGH.root',
+                        },
+                    }
+    
+    ################################################
+    # create a tree with only weights that will be used as friend tree for reweighting different lumi periods
+    ################################################
     print 'Opening mc file: ', sample.path[0]
     fmc = rt.TFile(sample.path[0],'read')
     tmc = None
@@ -296,7 +306,9 @@ def reweight( sample, puType = 0,useCustomW=False  ):
         tmc = fmc.Get(sample.tnpTree)
     
 
-#### can reweight vs nVtx but better to reweight v truePU
+    ################################################
+    # can reweight vs nVtx but better to reweight v truePU
+    ################################################
     puMCnVtx = []
     puMCrho = []
     if   puType == 1 :
@@ -319,15 +331,15 @@ def reweight( sample, puType = 0,useCustomW=False  ):
     puDataDist = {}
     puDataArray= {}
     weights = {}
-    epochKeys = puDataEpoch.keys()
-    if puType == 1  : epochKeys = nVtxDataEpoch.keys()
-    if puType == 2  : epochKeys = rhoDataEpoch.keys()
+    epochKeys = puDataEpoch[era].keys()
+    if puType == 1  : epochKeys = nVtxDataEpoch[era].keys()
+    if puType == 2  : epochKeys = rhoDataEpoch[era].keys()
  
     for pu in epochKeys:
         fpu = None
-        if   puType == 1 : fpu = rt.TFile(nVtxDataEpoch[pu],'read')
-        elif puType == 2 : fpu = rt.TFile(rhoDataEpoch[pu],'read')
-        else             : fpu = rt.TFile(puDataEpoch[pu],'read')
+        if   puType == 1 : fpu = rt.TFile(nVtxDataEpoch[era][pu],'read')
+        elif puType == 2 : fpu = rt.TFile(rhoDataEpoch[era][pu],'read')
+        else             : fpu = rt.TFile(puDataEpoch[era][pu],'read')
         puDataDist[pu] = fpu.Get('pileup').Clone('puHist_%s' % pu)
         puDataDist[pu].Scale(1./puDataDist[pu].Integral())
         puDataDist[pu].SetDirectory(0)
@@ -403,14 +415,10 @@ def reweight( sample, puType = 0,useCustomW=False  ):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='tnp EGM pu reweighter')
-    parser.add_argument('--mcTree'  , dest = 'path',  default = None, help = 'MC tree to compute weights for')
-    parser.add_argument('puTree'    , default = None                , help = 'output puTree')
+    parser.add_argument('--mcTree', dest = 'path', default = None, help = 'MC tree to compute weights for')
+    parser.add_argument('--era'   , dest = 'era',  default = None, choices= ['UL2016_preVFP','UL2016_postVFP', 'UL2017', 'UL2018', 'LegacyReReco2016', 'ReReco2017', 'ReReco2018'], help = ' run year and compaign indication UL or ReReco')
+    parser.add_argument('puTree'  , default = None, help = 'output puTree')
 
     args = parser.parse_args()
     args.path = [args.path]
     reweight(args)
-
-
-
-
-
