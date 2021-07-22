@@ -15,9 +15,6 @@ list_  = ULegacy_tnpSamples_dictNm if isUL else ReReco_tnpSamples_dictNm
 for sName in tnpSamples.UL2016_postVFP.keys():    
     sample = tnpSamples.UL2016_postVFP[sName]
     if sample is None : continue
-#    if not 'rec' in sName : continue
-#    if not 'Winter17' in sName : continue
-    if not 'DY' in sName: continue
     if not sample.isMC: continue
         
     trees = {}
