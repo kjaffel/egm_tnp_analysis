@@ -17,11 +17,15 @@ class tnpSample:
         self.puTree  = puTree
         self.isMC    = isMC
         self.weight  = None
+        self.hltPS   = None
         self.tnpTree = None
         self.maxWeight = 999999
 
     def set_weight(self,weight):
         self.weight = weight
+
+    def set_hltPS(self,hltPS):
+        self.hltPS = hltPS
 
     def set_maxWeight(self, maxi):
         self.maxWeight = maxi
@@ -103,5 +107,3 @@ class tnpVar:
     
     def set_hname(self,name):
         self.hname = name
-
-
