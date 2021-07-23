@@ -4,13 +4,6 @@ import CMS_lumi, tdrstyle
 from math import sqrt
 import ROOT as rt
 
-import efficiencyUtils as effUtil
-from efficiencyUtils import efficiency
-from efficiencyUtils import efficiencyList
-
-from Cut_and_Count_efficiencyUtils import Cut_and_count_efficiency
-from Cut_and_Count_efficiencyUtils import Cut_and_count_efficiencyList
-import  Cut_and_Count_efficiencyUtils as Cut_and_Count_effUtil
 
 
 tdrstyle.setTDRStyle()
@@ -34,6 +27,49 @@ graphColors = [rt.kBlack, rt.kGray+1, rt.kRed +1, rt.kRed-2, rt.kAzure+2, rt.kAz
                rt.kSpring-1, rt.kYellow -2 , rt.kYellow+1,
                rt.kBlack, rt.kBlack, rt.kBlack, 
                rt.kBlack, rt.kBlack, rt.kBlack, rt.kBlack, rt.kBlack, rt.kBlack, rt.kBlack ]
+
+def findMinMax( effis ):
+    mini = +999
+    maxi = -999
+
+    for key in effis.keys():
+        for eff in effis[key]:
+            if eff['val'] - eff['err'] < mini:
+                mini = eff['val'] - eff['err']
+            if eff['val'] + eff['err'] > maxi:
+                maxi = eff['val'] + eff['err']
+
+    if mini > 0.18 and mini < 0.28:
+        mini = 0.18
+    if mini > 0.28 and mini < 0.38:
+        mini = 0.28
+    if mini > 0.38 and mini < 0.48:
+        mini = 0.38
+    if mini > 0.48 and mini < 0.58:
+        mini = 0.48
+    if mini > 0.58 and mini < 0.68:
+        mini = 0.58
+    if mini > 0.68 and mini < 0.78:
+        mini = 0.68
+    if mini > 0.78 and mini < 0.88:
+        mini = 0.78
+    if mini > 0.88:
+        mini = 0.88
+    if mini > 0.92:
+        mini = 0.92
+
+        
+    if  maxi > 0.95:
+        maxi = 1.17        
+    elif maxi < 0.87:
+        maxi = 0.87
+    else:
+        maxi = 1.07
+
+    if maxi-mini > 0.5:
+        maxi = maxi + 0.2
+        
+    return (mini,maxi)
 
 def findMinMax_v2( effis ):
     mini = +999
@@ -79,54 +115,10 @@ def findMinMax_v2( effis ):
     return (mini,maxi)
     
 
-
-def findMinMax( effis ):
-    mini = +999
-    maxi = -999
-
-    for key in effis.keys():
-        for eff in effis[key]:
-            if eff['val'] - eff['err'] < mini:
-                mini = eff['val'] - eff['err']
-            if eff['val'] + eff['err'] > maxi:
-                maxi = eff['val'] + eff['err']
-
-    if mini > 0.18 and mini < 0.28:
-        mini = 0.18
-    if mini > 0.28 and mini < 0.38:
-        mini = 0.28
-    if mini > 0.38 and mini < 0.48:
-        mini = 0.38
-    if mini > 0.48 and mini < 0.58:
-        mini = 0.48
-    if mini > 0.58 and mini < 0.68:
-        mini = 0.58
-    if mini > 0.68 and mini < 0.78:
-        mini = 0.68
-    if mini > 0.78 and mini < 0.88:
-        mini = 0.78
-    if mini > 0.88:
-        mini = 0.88
-    if mini > 0.92:
-        mini = 0.92
-
-        
-    if  maxi > 0.95:
-        maxi = 1.17        
-    elif maxi < 0.87:
-        maxi = 0.87
-    else:
-        maxi = 1.07
-
-    if maxi-mini > 0.5:
-        maxi = maxi + 0.2
-        
-    return (mini,maxi)
-
-    
-
 def EffiGraph1D(effDataList, effMCList, sfList ,nameout, xAxis = 'pT', yAxis = 'eta'):
-            
+
+    import efficiencyUtils as effUtil
+    
     W = 800
     H = 800
     yUp = 0.45
@@ -293,67 +285,10 @@ def EffiGraph1D(effDataList, effMCList, sfList ,nameout, xAxis = 'pT', yAxis = '
     return listOfTGraph2
 
 
-
-def doPlot(filein, lumi, axis = ['pT','eta'] ):
-    print " Opening file: %s (plot lumi: %3.1f)" % ( filein, lumi )
-    CMS_lumi.lumi_13TeV = "%+3.1f fb^{-1}" % lumi
-
-    nameOutBase = filein
-    if not os.path.exists( filein ) :
-        print 'file %s does not exist' % filein
-        sys.exit(1)
-
-
-    fileWithEff = open(filein, 'r')
-    effGraph = Cut_and_count_efficiencyList()
-
-    for line in fileWithEff :
-        modifiedLine = line.lstrip(' ').rstrip(' ').rstrip('\n')
-        numbers = modifiedLine.split('\t')
-
-        if len(numbers) > 0 and isFloat(numbers[0]):
-            etaKey = ( float(numbers[0]), float(numbers[1]) )
-            ptKey  = ( float(numbers[2]), min(500,float(numbers[3])) )
-
-            myeff = Cut_and_count_efficiency(ptKey,etaKey,
-                               float(numbers[4]),float(numbers[5]),float(numbers[6] ),float(numbers[7] ),float(numbers[8]),float(numbers[9]),float(numbers[10] ),float(numbers[11] ),
-                               float(numbers[12]),float(numbers[13]),float(numbers[14]),float(numbers[15]) )
-#                           float(numbers[8]),float(numbers[9]),float(numbers[10]), -1 )
-
-            effGraph.addEfficiency(myeff)
-
-    fileWithEff.close()
-
-    print " ------------------------------- "
-
-    pdfout = nameOutBase + '_egammaPlots.pdf'
-    cDummy = rt.TCanvas()
-    cDummy.Print( pdfout + "[" )
-
-    if axis[0] == 'vtx' or axis[0] == 'pT':
-
-       EffiGraphAsymError1D( effGraph.pt_1DGraphAsymError_list( False , False) , #eff Data
-                    None,
-                    effGraph.pt_1DGraph_list( True , False) , #SF
-                    pdfout,
-                    xAxis = axis[0], yAxis = axis[1] )
-
-
-    if axis[0] == 'eta':
-       EffiGraphAsymError1D( effGraph.eta_1DGraphAsymError_list( typeGR =  0 , doAverage = False) , # eff Data
-                              effGraph.eta_1DGraphAsymError_list( typeGR = -1 , doAverage = False) , # eff MC
-                              effGraph.eta_1DGraphAsymError_list( typeGR = +1 , doAverage = False) , # SF
-                              pdfout,
-                              xAxis = axis[0], yAxis = axis[1] )
-
-
-
-    cDummy.Print( pdfout + "]" )
-
-
-
 def EffiGraph1D_multiData(effDataLists, effMCList, sfLists ,nameout, fileNameList, denomNameList, xAxis = 'pT', yAxis = 'eta', EB_or_EE = 'EB'):
 
+    import  Cut_and_Count_efficiencyUtils as Cut_and_Count_effUtil
+    
     W = 800
     H = 800
     yUp = 0.3
@@ -743,7 +678,7 @@ def EffiGraphAsymError1D(effDataList, effMCList, sfList ,nameout, xAxis = 'pT', 
         listOfTGraph2[use_igr].GetHistogram().SetMinimum(sfMin)
         listOfTGraph2[use_igr].GetHistogram().SetMaximum(sfMax)
         #if 'pT' in xAxis or 'pt' in xAxis :
-            #listOfTGraph2[use_igr].GetHistogram().GetXaxis().SetMoreLogLabels()
+        #   listOfTGraph2[use_igr].GetHistogram().GetXaxis().SetMoreLogLabels()
         listOfTGraph2[use_igr].GetHistogram().GetXaxis().SetNoExponent()
         listOfTGraph2[use_igr].Draw(option)
         
@@ -767,8 +702,14 @@ def EffiGraphAsymError1D(effDataList, effMCList, sfList ,nameout, xAxis = 'pT', 
     return listOfTGraph2
 
 
-def diagnosticErrorPlot( effgr, ierror, nameout ):
-    errorNames = efficiency.getSystematicNames()
+def diagnosticErrorPlot( effgr, ierror, nameout, doCut_and_count):
+    if doCut_and_count:
+        from Cut_and_Count_efficiencyUtils import Cut_and_count_efficiency
+        errorNames = Cut_and_count_efficiency.getSystematicNames()
+    else:
+        from efficiencyUtils import efficiency
+        errorNames = efficiency.getSystematicNames()
+
     c2D_Err = rt.TCanvas('canScaleFactor_%s' % errorNames[ierror] ,'canScaleFactor: %s' % errorNames[ierror],1000,600)    
     c2D_Err.Divide(2,1)
     c2D_Err.GetPad(1).SetLogy()
@@ -794,11 +735,80 @@ def diagnosticErrorPlot( effgr, ierror, nameout ):
     h2_sfErrorRel.DrawCopy("colz TEXT45")
     
     c2D_Err.Print(nameout)
+    listName = nameout.split('/')
+    for iext in ["pdf","C","png"]:
+        c2D_Err.SaveAs(nameout.replace('egammaEffi.txt_egammaPlots',listName[-6].replace('tnp','')+'_SF2D'+'_'+errorNames[ierror]+listName[-3]).replace('pdf',iext))
+                        
+    return h2_sfErrorAbs
+
+import gc                                                                                              
+gc.collect()
+def doPlot(filein, lumi, axis = ['pT','eta'] ):
+    
+    from Cut_and_Count_efficiencyUtils import Cut_and_count_efficiency
+    from Cut_and_Count_efficiencyUtils import Cut_and_count_efficiencyList
+    
+    print " Opening file: %s (plot lumi: %3.1f)" % ( filein, lumi )
+    CMS_lumi.lumi_13TeV = "%+3.1f fb^{-1}" % lumi
+
+    nameOutBase = filein
+    if not os.path.exists( filein ) :
+        print 'file %s does not exist' % filein
+        sys.exit(1)
+
+
+    fileWithEff = open(filein, 'r')
+    effGraph = Cut_and_count_efficiencyList()
+
+    for line in fileWithEff :
+        modifiedLine = line.lstrip(' ').rstrip(' ').rstrip('\n')
+        numbers = modifiedLine.split('\t')
+
+        if len(numbers) > 0 and isFloat(numbers[0]):
+            etaKey = ( float(numbers[0]), float(numbers[1]) )
+            ptKey  = ( float(numbers[2]), min(500,float(numbers[3])) )
+
+            myeff = Cut_and_count_efficiency(ptKey,etaKey,
+                               float(numbers[4]),float(numbers[5]),float(numbers[6] ),float(numbers[7] ),float(numbers[8]),float(numbers[9]),float(numbers[10] ),float(numbers[11] ),
+                               float(numbers[12]),float(numbers[13]),float(numbers[14]),float(numbers[15]) )
+#                           float(numbers[8]),float(numbers[9]),float(numbers[10]), -1 )
+
+            effGraph.addEfficiency(myeff)
+
+    fileWithEff.close()
+
+    print " ------------------------------- "
+
+    pdfout = nameOutBase + '_egammaPlots.pdf'
+    cDummy = rt.TCanvas()
+    cDummy.Print( pdfout + "[" )
+
+    if axis[0] == 'vtx' or axis[0] == 'pT':
+
+       EffiGraphAsymError1D( effGraph.pt_1DGraphAsymError_list( False , False) , #eff Data
+                    None,
+                    effGraph.pt_1DGraph_list( True , False) , #SF
+                    pdfout,
+                    xAxis = axis[0], yAxis = axis[1] )
+
+
+    if axis[0] == 'eta':
+       EffiGraphAsymError1D( effGraph.eta_1DGraphAsymError_list( typeGR =  0 , doAverage = False) , # eff Data
+                              effGraph.eta_1DGraphAsymError_list( typeGR = -1 , doAverage = False) , # eff MC
+                              effGraph.eta_1DGraphAsymError_list( typeGR = +1 , doAverage = False) , # SF
+                              pdfout,
+                              xAxis = axis[0], yAxis = axis[1] )
+
+    cDummy.Print( pdfout + "]" )
+
 
 
 # for data comparisons
 def doPlots(filesin, lumi, axis = ['pT','eta'] ):
 
+    from Cut_and_Count_efficiencyUtils import Cut_and_count_efficiency
+    from Cut_and_Count_efficiencyUtils import Cut_and_count_efficiencyList
+    
     effGraphList = []
     dataNameList = []
     denomNameList = []
@@ -887,6 +897,8 @@ def doPlots(filesin, lumi, axis = ['pT','eta'] ):
     #cDummy.Print( pdfout + "]" )
 
 def doEGM_SFs(filein, lumi, axis = ['pT','eta'], doCut_and_Count = False):
+    
+    
     print " Opening file: %s (plot lumi: %3.1f)" % ( filein, lumi )
     CMS_lumi.lumi_13TeV = "%+3.1f fb^{-1}" % lumi 
 
@@ -898,8 +910,10 @@ def doEGM_SFs(filein, lumi, axis = ['pT','eta'], doCut_and_Count = False):
 
     fileWithEff = open(filein, 'r')
     if doCut_and_count:
+        from Cut_and_Count_efficiencyUtils import Cut_and_count_efficiencyList
         effGraph = Cut_and_count_efficiencyList()
     else:
+        from efficiencyUtils import efficiencyList
         effGraph = efficiencyList()
     
     for line in fileWithEff :
@@ -911,11 +925,13 @@ def doEGM_SFs(filein, lumi, axis = ['pT','eta'], doCut_and_Count = False):
             ptKey  = ( float(numbers[2]), min(500,float(numbers[3])) )
         
             if doCut_and_count:
+                from Cut_and_Count_efficiencyUtils import Cut_and_count_efficiency
                 myeff = Cut_and_count_efficiency(ptKey,etaKey,
                                 float(numbers[4]),float(numbers[5]),float(numbers[6] ),float(numbers[7] ),float(numbers[8]),float(numbers[9]),float(numbers[10] ),float(numbers[11] ),
                                 float(numbers[12]),float(numbers[13]),float(numbers[14]),float(numbers[15]) )
     #                           float(numbers[8]),float(numbers[9]),float(numbers[10]), -1 )
             else:
+                from efficiencyUtils import efficiency
                 myeff = efficiency(ptKey, etaKey,
                                 float(numbers[4]),float(numbers[5]),float(numbers[6] ),float(numbers[7] ),
                                 float(numbers[8]),float(numbers[9]),float(numbers[10]),float(numbers[11]) )
@@ -945,30 +961,30 @@ def doEGM_SFs(filein, lumi, axis = ['pT','eta'], doCut_and_Count = False):
 
     if doCut_and_count:    
         EffiGraphAsymError1D( effGraph.pt_1DGraphAsymError_list( False ) , #eff Data
-                             None, 
-                             effGraph.pt_1DGraph_list( True ) , #SF
-                            pdfout,
-                            xAxis = axis[0], yAxis = axis[1] )
+                              None, 
+                              effGraph.pt_1DGraph_list( True ) , #SF
+                              pdfout,
+                              xAxis = axis[0], yAxis = axis[1] )
         listOfSF1D = EffiGraphAsymError1D( effGraph.eta_1DGraphAsymError_list( typeGR =  0 ) , # eff Data
-                                            effGraph.eta_1DGraphAsymError_list( typeGR = -1 ) , # eff MC
-                                            effGraph.eta_1DGraphAsymError_list( typeGR = +1 ) , # SF
-                                            pdfout, 
-                                            xAxis = axis[1], yAxis = axis[0] )
+                                           effGraph.eta_1DGraphAsymError_list( typeGR = -1 ) , # eff MC
+                                           effGraph.eta_1DGraphAsymError_list( typeGR = +1 ) , # SF
+                                           pdfout, 
+                                           xAxis = axis[1], yAxis = axis[0] )
     else:
         EffiGraph1D( effGraph.pt_1DGraph_list_customEtaBining(customEtaBining, False ) , #eff Data
-                    None, 
-                    effGraph.pt_1DGraph_list_customEtaBining(customEtaBining, True ) , #SF
-                    pdfout,
-                    xAxis = axis[0], yAxis = axis[1] )
+                     None, 
+                     effGraph.pt_1DGraph_list_customEtaBining(customEtaBining, True ) , #SF
+                     pdfout,
+                     xAxis = axis[0], yAxis = axis[1] )
 
         #EffiGraph1D( effGraph.pt_1DGraph_list_customEtaBining(customEtaBining,False) , 
         #             effGraph.pt_1DGraph_list_customEtaBining(customEtaBining,True)   , False, pdfout )
         #EffiGraph1D( effGraph.eta_1DGraph_list(False), effGraph.eta_1DGraph_list(True), True , pdfout )
         listOfSF1D = EffiGraph1D( effGraph.eta_1DGraph_list( typeGR =  0 ) , # eff Data
-                            effGraph.eta_1DGraph_list( typeGR = -1 ) , # eff MC
-                                effGraph.eta_1DGraph_list( typeGR = +1 ) , # SF
-                              pdfout, 
-                              xAxis = axis[1], yAxis = axis[0] )
+                                  effGraph.eta_1DGraph_list( typeGR = -1 ) , # eff MC
+                                  effGraph.eta_1DGraph_list( typeGR = +1 ) , # SF
+                                  pdfout, 
+                                  xAxis = axis[1], yAxis = axis[0] )
 
 
     h2EffData = effGraph.ptEtaScaleFactor_2DHisto(-3)
@@ -1021,7 +1037,7 @@ def doEGM_SFs(filein, lumi, axis = ['pT','eta'], doCut_and_Count = False):
 
     errorNames = efficiency.getSystematicNames()
     for isyst in range(len(errorNames)):
-        h2_isyst = diagnosticErrorPlot( effGraph, isyst, pdfout )
+        h2_isyst = diagnosticErrorPlot( effGraph, isyst, pdfout, doCut_and_count)
         h2_isyst.Write( errorNames[isyst],rt.TObject.kOverwrite)
     cDummy.Print( pdfout + "]" )
     rootout.Close()

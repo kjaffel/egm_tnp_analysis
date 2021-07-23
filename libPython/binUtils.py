@@ -21,6 +21,8 @@ def createBins( bining, cut ):
         nb1D = 1
         if   bining[iv]['type'] == 'float' :
             nb1D = len(bining[iv]['bins'])-1
+        elif   bining[iv]['type'] == 'abs_float' : # for absolute binning
+            nb1D = len(bining[iv]['bins'])-1
         elif bining[iv]['type'] == 'int' :
             nb1D = len(bining[iv]['bins'])
         nbin = nbin * nb1D
@@ -76,6 +78,18 @@ def createBins( bining, cut ):
                     binTitle = '%s; %s = %d'    % (binTitle,var,bins1D[ix[iv]])
                 binName  = '%s_%sEq%d' % (binName ,var,bins1D[ix[iv]])
                 binVars[var] = { 'min': bins1D[ix[iv]], 'max': bins1D[ix[iv]]}
+            
+            #### added by Junho Kim 
+            if varType == 'abs_float' :
+                if binCut is None:
+                    binCut   = 'abs(%s) >= %f && abs(%s) < %f' % (var,bins1D[ix[iv]],var,bins1D[ix[iv]+1])
+                    binTitle = '%1.3f < %s < %1.3f'  % (bins1D[ix[iv]],var,bins1D[ix[iv]+1]) #### somehow if abs() is put in the title, number of entries not counted
+                else:
+                    binCut   = '%s && abs(%s) >= %f && abs(%s) < %f' % (binCut  ,var,bins1D[ix[iv]],var,bins1D[ix[iv]+1])
+                    binTitle = '%s; %1.3f < %s < %1.3f'    % (binTitle,bins1D[ix[iv]],var,bins1D[ix[iv]+1])
+                binName  = '%s_%s_%1.2fTo%1.2f'  % (binName ,var,bins1D[ix[iv]],bins1D[ix[iv]+1])
+                binVars[var] = { 'min': bins1D[ix[iv]], 'max': bins1D[ix[iv]+1]}
+            ####
 
             binName = binName.replace('-','m')
             binName = binName.replace('.','p')
@@ -101,5 +115,3 @@ def tuneCuts( bindef, cuts ) :
         cut0 = bindef['bins'][ibin]['cut']
         cut1 = cuts[ibin]
         bindef['bins'][ibin]['cut'] = '%s && %s ' % (cut0,cut1)
-    
-
